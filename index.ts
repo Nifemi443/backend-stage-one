@@ -92,27 +92,16 @@ app.post('/api/profiles', async (req: Request, res: Response) => {
   }
 });
 
-// 2. GET /api/profiles/:id
-app.get('/api/profiles/:id', async (req: Request, res: Response) => {
-  try {
-    const profile = await prisma.profile.findUnique({ where: { id: req.params.id } });
-    if (!profile) {
-      return res.status(404).json({ status: "error", message: "Profile not found" });
-    }
-    return res.status(200).json({ status: "success", data: profile });
-  } catch (error) {
-    return res.status(500).json({ status: "error", message: "Internal server error" });
-  }
-});
-
-// 3. GET /api/profiles
 app.get('/api/profiles', async (req: Request, res: Response) => {
   try {
-    const { gender, country_id, age_group } = req.query;
+    const gender = Array.isArray(req.query.gender) ? String(req.query.gender[0]) : req.query.gender as string | undefined;
+    const country_id = Array.isArray(req.query.country_id) ? String(req.query.country_id[0]) : req.query.country_id as string | undefined;
+    const age_group = Array.isArray(req.query.age_group) ? String(req.query.age_group[0]) : req.query.age_group as string | undefined;
+
     const filters: any = {};
-    if (gender) filters.gender = { equals: String(gender), mode: 'insensitive' };
-    if (country_id) filters.country_id = { equals: String(country_id), mode: 'insensitive' };
-    if (age_group) filters.age_group = { equals: String(age_group), mode: 'insensitive' };
+    if (gender) filters.gender = { equals: gender, mode: 'insensitive' };
+    if (country_id) filters.country_id = { equals: country_id, mode: 'insensitive' };
+    if (age_group) filters.age_group = { equals: age_group, mode: 'insensitive' };
 
     const profiles = await prisma.profile.findMany({ where: filters });
     return res.status(200).json({
@@ -131,20 +120,5 @@ app.get('/api/profiles', async (req: Request, res: Response) => {
     return res.status(500).json({ status: "error", message: "Internal server error" });
   }
 });
-
-// 4. DELETE /api/profiles/:id
-app.delete('/api/profiles/:id', async (req: Request, res: Response) => {
-  try {
-    const existing = await prisma.profile.findUnique({ where: { id: req.params.id } });
-    if (!existing) {
-      return res.status(404).json({ status: "error", message: "Profile not found" });
-    }
-    await prisma.profile.delete({ where: { id: req.params.id } });
-    return res.status(204).send();
-  } catch (error) {
-    return res.status(500).json({ status: "error", message: "Internal server error" });
-  }
-});
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
